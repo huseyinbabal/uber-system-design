@@ -1,4 +1,4 @@
-# Uber System Design, Part 1
+# Uber System Design
 
 A small ride-hailing location service: drivers send their position over a WebSocket, riders get the drivers within 2 km pushed to them once a second. It runs on a local Kubernetes cluster (kind) behind HAProxy, and k6 plays the drivers.
 
