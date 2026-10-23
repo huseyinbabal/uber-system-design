@@ -1,0 +1,39 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Live drivers</title>
+<style>
+  html,body{margin:0;height:100%;background:#0f1115;color:#e8e8e8;font:600 22px system-ui,sans-serif}
+  canvas{display:block;width:100vw;height:100vh}
+  #hud{position:fixed;top:20px;left:24px;background:#0f1115cc;padding:12px 18px;border-radius:10px}
+  #hud b{font-size:44px;display:block}
+  .pod{display:flex;align-items:center;gap:10px;font-size:18px;margin-top:6px}
+  .dot{width:14px;height:14px;border-radius:50%}
+</style></head>
+<body><canvas id="c"></canvas><div id="hud"><b id="n">0</b>drivers visible<div id="pods"></div></div>
+<script>
+const C = { lat: 41.015, lng: 28.98, span: 0.05 };   // the box the simulated drivers move in
+const colors = ['#ffd84d', '#4dd2ff', '#ff6b8a', '#7dff8a', '#c38bff', '#ff9f43', '#9ad0ff', '#ffffff'];
+const podColor = {};
+const cv = document.getElementById('c'), g = cv.getContext('2d');
+let drivers = [];
+function color(p) { if (!(p in podColor)) podColor[p] = colors[Object.keys(podColor).length % colors.length]; return podColor[p]; }
+function draw() {
+  cv.width = innerWidth * devicePixelRatio; cv.height = innerHeight * devicePixelRatio;
+  const w = cv.width, h = cv.height;
+  g.fillStyle = '#0f1115'; g.fillRect(0, 0, w, h);
+  g.strokeStyle = '#1d2129'; g.lineWidth = 2;
+  for (let i = 0; i <= 20; i++) { g.beginPath(); g.moveTo(i * w / 20, 0); g.lineTo(i * w / 20, h); g.stroke(); g.beginPath(); g.moveTo(0, i * h / 20); g.lineTo(w, i * h / 20); g.stroke(); }
+  for (const d of drivers) {
+    const x = (d.lng - (C.lng - C.span)) / (2 * C.span) * w, y = h - (d.lat - (C.lat - C.span)) / (2 * C.span) * h;
+    g.fillStyle = color(d.pod); g.beginPath(); g.arc(x, y, 5 * devicePixelRatio, 0, 7); g.fill();
+  }
+  document.getElementById('n').textContent = drivers.length.toLocaleString('en-US');
+  const seen = [...new Set(drivers.map(d => d.pod))].sort();
+  document.getElementById('pods').innerHTML = seen.map(p => `<div class="pod"><span class="dot" style="background:${color(p)}"></span>${p}</div>`).join('');
+}
+function connect() {
+  const ws = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/rider?lat=${C.lat}&lng=${C.lng}&km=50`);
+  ws.onmessage = e => { drivers = JSON.parse(e.data).drivers; draw(); };
+  ws.onclose = () => setTimeout(connect, 1000);
+}
+addEventListener('resize', draw); draw(); connect();
+</script></body></html>

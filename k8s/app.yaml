@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: location-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: location-service }
+  template:
+    metadata:
+      labels: { app: location-service }
+    spec:
+      containers:
+        - name: app
+          image: location-service:v1
+          ports: [{ containerPort: 8080 }]
+          env:
+            - name: POD_NAME
+              valueFrom: { fieldRef: { fieldPath: metadata.name } }
+          resources:
+            requests: { cpu: 500m, memory: 256Mi }
+            limits: { cpu: 500m, memory: 256Mi }
+          readinessProbe:
+            httpGet: { path: /healthz, port: 8080 }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: location-service
+spec:
+  selector: { app: location-service }
+  ports: [{ port: 80, targetPort: 8080 }]
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: location-service
+  annotations:
+    haproxy.org/load-balance: leastconn   # long-lived WebSockets: send new ones to the emptiest pod
+spec:
+  rules:
+    - http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service: { name: location-service, port: { number: 80 } }

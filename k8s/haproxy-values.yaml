@@ -1,0 +1,15 @@
+controller:
+  kind: Deployment
+  replicaCount: 1
+  deployment:
+    useHostPort: true
+  nodeSelector:
+    ingress-ready: "true"
+  tolerations:
+    - { key: node-role.kubernetes.io/control-plane, operator: Exists, effect: NoSchedule }
+  service:
+    type: ClusterIP
+  ingressClassResource:
+    default: true
+  config:
+    timeout-tunnel: "1h"

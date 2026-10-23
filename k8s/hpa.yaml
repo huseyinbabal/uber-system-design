@@ -1,0 +1,16 @@
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: location-service
+spec:
+  scaleTargetRef: { apiVersion: apps/v1, kind: Deployment, name: location-service }
+  minReplicas: 1
+  maxReplicas: 8
+  metrics:
+    - type: Resource
+      resource:
+        name: memory
+        target: { type: Utilization, averageUtilization: 50 }
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 0
